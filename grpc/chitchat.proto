@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package chitchat;
+option go_package = "./grpc;grpc";
+
+// Message that the server broadcasts to all clients
+message Broadcast {
+  enum Type {
+    CHAT = 0;   // Normal chat message
+    JOIN = 1;   // A new participant joined
+    LEAVE = 2;  // A participant left
+  }
+
+  Type type = 1;              
+  string client_id = 2;       // Who sent the message
+  string message = 3;         // The message text
+  int64 lamport_clock = 4;    // Logical Lamport timestamp
+}
+
+// Sent when a client leaves the chat
+message LeaveRequest {
+  string client_id = 1;
+}
+
+// Server reply to Leave
+message LeaveResponse {
+  bool ack = 1;
+  string error = 2;
+}
+
+// Sent when a client joins the chat
+message JoinRequest {
+  string id = 1;
+}
+
+// Sent when a client publishes (sends a message)
+message PublishRequest {
+  string client_id = 1;
+  string text = 2;
+}
+
+// Server reply to Publish
+message PublishResponse {
+  bool ack = 1;
+  string error = 2;
+}
+
+// Main chat service
+service ChitChat {
+
+  // Client joins the chat and receives a stream of broadcasts (chats)
+  rpc Join(JoinRequest) returns (stream Broadcast);
+
+  // Client sends a message to be broadcasted to others
+  rpc Publish(PublishRequest) returns (PublishResponse);
+
+  // Client notifies the server it is leaving
+  rpc Leave(LeaveRequest) returns (LeaveResponse);
+}
